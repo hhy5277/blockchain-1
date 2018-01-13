@@ -15,40 +15,40 @@ import (
 )
 
 const (
-	queryLatest = iota
+	queryLatest        = iota
 	queryAll
 	responseBlockchain
 )
 
 var genesisBlock = &Block{
-	Index:0,
-	PreviousHash:"0",
-	Timestamp:1465154705,
-	Data:"my genesis block!!",
-	Hash: "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7",
+	Index:        0,
+	PreviousHash: "0",
+	Timestamp:    1465154705,
+	Data:         "my genesis block!!",
+	Hash:         "816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7",
 }
 
 var (
-	sockets []*websocket.Conn
-	blockchain = []*Block{genesisBlock}
-	httpAddr = flag.String("api", ":3001", "api server address.")
-	p2pAddr = flag.String("p2p", ":6001", "p2p server address.")
+	sockets      []*websocket.Conn
+	blockchain   = []*Block{genesisBlock}
+	httpAddr     = flag.String("api", ":3001", "api server address.")
+	p2pAddr      = flag.String("p2p", ":6001", "p2p server address.")
 	initialPeers = flag.String("peers", "ws://location:6001", "initial peers")
 )
 
 type Block struct {
-	Index         int64   `json:"index"`
-	PreviousHash  string  `json:"previousHash"`
-	Timestamp     int64   `json:"timestamp"`
-	Data          string  `json:"data"`
-	Hash          string  `json:"hash"`
+	Index        int64  `json:"index"`
+	PreviousHash string `json:"previousHash"`
+	Timestamp    int64  `json:"timestamp"`
+	Data         string `json:"data"`
+	Hash         string `json:"hash"`
 }
 
 type ByIndex []*Block
 
 type ResponseBlockchain struct {
-	Type int     `json:"type"`
-	Data string  `json:"data"`
+	Type int    `json:"type"`
+	Data string `json:"data"`
 }
 
 func (b *Block) String() string {
@@ -149,7 +149,7 @@ func handleAddPeer(w http.ResponseWriter, r *http.Request) {
 
 func wsHandleP2P(ws *websocket.Conn) {
 	var (
-		v = &ResponseBlockchain{}
+		v    = &ResponseBlockchain{}
 		peer = ws.LocalAddr().String()
 	)
 	sockets = append(sockets, ws)
@@ -193,7 +193,7 @@ func wsHandleP2P(ws *websocket.Conn) {
 
 func responseLatestMsg() (bs []byte) {
 	var v = &ResponseBlockchain{Type: responseBlockchain}
-	d, _ := json.Marshal(blockchain[len(blockchain) - 1:])
+	d, _ := json.Marshal(blockchain[len(blockchain)-1:])
 	v.Data = string(d)
 	bs, _ = json.Marshal(v)
 	return
@@ -214,11 +214,11 @@ func calculateHashForBlock(b *Block) string {
 
 func generateNextBlock(data string) (nb *Block) {
 	var previousBlock = getLatestBlock()
-	nb = &Block {
-		Data: data,
+	nb = &Block{
+		Data:         data,
 		PreviousHash: previousBlock.Hash,
-		Index: previousBlock.Index + 1,
-		Timestamp: time.Now().Unix(),
+		Index:        previousBlock.Index + 1,
+		Timestamp:    time.Now().Unix(),
 	}
 	nb.Hash = calculateHashForBlock(nb)
 	return
@@ -231,15 +231,15 @@ func addBlock(b *Block) {
 }
 
 func getLatestBlock() (block *Block) {
-	return blockchain[len(blockchain) - 1]
+	return blockchain[len(blockchain)-1]
 }
 
 func isValidNewBlock(nb, pb *Block) (ok bool) {
 	if nb.Hash == calculateHashForBlock(nb) &&
-		pb.Index + 1 == nb.Index &&
-			pb.Hash == nb.PreviousHash {
-				ok = true
-			}
+		pb.Index+1 == nb.Index &&
+		pb.Hash == nb.PreviousHash {
+		ok = true
+	}
 	return
 }
 
@@ -250,7 +250,7 @@ func isValidChain(bc []*Block) bool {
 	}
 	var temp = []*Block{bc[0]}
 	for i := 1; i < len(bc); i++ {
-		if isValidNewBlock(bc[i], temp[i - 1]) {
+		if isValidNewBlock(bc[i], temp[i-1]) {
 			temp = append(temp, bc[i])
 		} else {
 			return false
@@ -274,7 +274,7 @@ func broadcast(msg []byte) {
 		_, err := socket.Write(msg)
 		if err != nil {
 			log.Printf("peer [%s] disconnected.", socket.RemoteAddr().String())
-			sockets = append(sockets[0:n], sockets[n + 1:]...)
+			sockets = append(sockets[0:n], sockets[n+1:]...)
 		}
 	}
 }
@@ -287,7 +287,7 @@ func handleBlockchainResponse(msg []byte) {
 
 	sort.Sort(ByIndex(receivedBlocks))
 
-	latestBlockReceived := receivedBlocks[len(receivedBlocks) - 1]
+	latestBlockReceived := receivedBlocks[len(receivedBlocks)-1]
 	latestBlockHeld := getLatestBlock()
 	if latestBlockReceived.Index > latestBlockHeld.Index {
 		log.Printf("blockchain possibly behind. We got: %d Peer got: %d",
